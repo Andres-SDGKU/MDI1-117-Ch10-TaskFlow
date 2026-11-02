@@ -14,8 +14,9 @@ class TaskListViewModel: ObservableObject {
     // MARK: Class #1 Functions
     /// Add task function
     func addTask(title: String) {
-        guard !title.isEmpty else { return }
-        tasks.append(TaskItem(title: title))
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        tasks.append(TaskItem(title: trimmed))
     }
     
     /// Delete task function

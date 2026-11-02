@@ -6,32 +6,66 @@
 //
 
 import XCTest
+@testable import TaskFlow
 
 final class TaskFlowTests: XCTestCase {
 
+    var viewModel: TaskListViewModel!
+    
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        viewModel = TaskListViewModel()
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    /// Exercise #1
+    func test_addTask_increasesTaskCount() {
+        // Arrange: setUpWithError provides an empty view model
+     
+        // Act
+        viewModel.addTask(title: "Buy groceries")
+     
+        // Assert
+        XCTAssertEqual(viewModel.tasks.count, 1)
+        XCTAssertEqual(viewModel.tasks.first?.title, "Buy groceries")
     }
-
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-        // XCTest Documentation
-        // https://developer.apple.com/documentation/xctest
+    
+    /// Exercise #2
+    func test_removeTask_removesCorrectItem() {
+        // Arrange
+        viewModel.addTask(title: "Task A")
+        viewModel.addTask(title: "Task B")
+     
+        // Act
+        viewModel.removeTask(at: 0)
+     
+        // Assert
+        XCTAssertEqual(viewModel.tasks.count, 1)
+        XCTAssertEqual(viewModel.tasks.first?.title, "Task B")
     }
-
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        measure {
-            // Put the code you want to measure the time of here.
-        }
+    
+    
+    /// Exercise #3
+    func test_toggleCompletion_flipsIsCompleted() {
+        // Arrange
+        viewModel.addTask(title: "Task A")
+        let taskId = viewModel.tasks[0].id
+        XCTAssertFalse(viewModel.tasks[0].isCompleted)
+        
+        // Act
+        viewModel.toggleCompletion(id: taskId)
+        
+        // Assert
+        XCTAssertTrue(viewModel.tasks[0].isCompleted)
     }
-
+    
+    /// Exercise #4
+    func test_addTask_withEmptyTitle_isIgnored() {
+        // Arrange
+        let initialCount = viewModel.tasks.count
+        
+        // Act
+        viewModel.addTask(title: "     ")
+        
+        // Assert
+        XCTAssertEqual(viewModel.tasks.count, initialCount, "A blank title should not create a task")
+    }
 }
