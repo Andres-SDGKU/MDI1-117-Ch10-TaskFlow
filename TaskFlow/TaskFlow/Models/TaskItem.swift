@@ -11,4 +11,10 @@ struct TaskItem: Identifiable, Equatable {
     var id: UUID = UUID()
     var title: String
     var isCompleted: Bool = false
+    var priority: Priority = .medium
+    var isFavorite: Bool = false
+}
+
+enum Priority: String, CaseIterable {
+    case low, medium, high
 }
