@@ -13,6 +13,12 @@ struct TaskItem: Identifiable, Equatable {
     var isCompleted: Bool = false
     var priority: Priority = .medium
     var isFavorite: Bool = false
+    var dueDate: Date? = nil
+    
+    func isOverdue(now: Date) -> Bool {
+        guard let dueDate, !isCompleted else { return false }
+        return dueDate < now
+    }
 }
 
 enum Priority: String, CaseIterable {

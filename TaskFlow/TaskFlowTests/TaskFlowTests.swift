@@ -175,4 +175,136 @@ final class TaskFlowTests: XCTestCase {
         XCTAssertEqual(viewModel.favoriteTasks.count, 1)
         XCTAssertEqual(viewModel.favoriteTasks.first?.title, "Task B")
     }
+    
+    // MARK: Class #3
+    /// Exercise #8 - Stub Example
+    func test_loadTask_returnsStubbedTasks() {
+        // Arrange
+        let viewModel = TaskListViewModel(service: StubTaskService())
+        
+        // Act
+        viewModel.loadTasks()
+        
+        // Assert
+        XCTAssertEqual(viewModel.tasks.count, 3)
+    }
+    
+    /// Exercise #9 - Stub with custom array
+    func test_loadTask_withCustomStubbedData_returnsThatData() {
+        // Arrange
+        let customTask = [TaskItem(title: "Only one task", priority: .high)]
+        let viewModel = TaskListViewModel(service: StubTaskService(stubbedTasks: customTask))
+        
+        // Act
+        viewModel.loadTasks()
+        
+        // Assert
+        XCTAssertEqual(viewModel.tasks.first?.title, "Only one task")
+    }
+    
+    /// Exercise #10 - Mocks Example
+    func test_removeTasks_callsServiceDeleteExactlyOnce() {
+        // Arrange
+        let mockService = MockTaskService(tasksToReturn: [TaskItem(title: "Sample", priority: .medium)])
+        let viewModel = TaskListViewModel(service: mockService)
+        
+        // Act
+        viewModel.loadTasks()
+        viewModel.removeTask(at: 0)
+        
+        // Assert
+        XCTAssertEqual(mockService.deleteCallCount, 1)
+    }
+    
+    /// Exercise #11 -  Mock Notification Scheduler
+    func test_addTask_withDueDate_schedulesReminderExactlyOnce() {
+        // Arrange
+        let mockScheduler = MockNotificationScheduler()
+        let viewModel = TaskListViewModel(notificationScheduler: mockScheduler)
+        
+        // Act
+        viewModel.addTask(title: "Submit Report", dueDate: Date().addingTimeInterval(3600))
+        
+        // Assert
+        XCTAssertEqual(mockScheduler.scheduleCallCount, 1)
+    }
+    
+    /// Exercise #12 - No due date,  no reminder
+    func test_addTask_withoutDueDate_doesNotScheduleReminder() {
+        // Arrange
+        let mockScheduler = MockNotificationScheduler()
+        let viewModel = TaskListViewModel(notificationScheduler: mockScheduler)
+        
+        // Act
+        viewModel.addTask(title: "Read a book")
+        
+        // Assert
+        XCTAssertEqual(mockScheduler.scheduleCallCount, 0)
+    }
+    
+    /// Exercise #13 - Overdue with a fake clock
+    func test_isOverdue_whenNowIsAfterDueDate_returnsTrue() {
+        let due = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = TaskListViewModel(clock: FakeClock(fixedNow: due.addingTimeInterval(60)))
+        
+        viewModel.addTask(title: "Pay rent", dueDate: due)
+        
+        XCTAssertTrue(viewModel.isOverdue(viewModel.tasks[0]))
+    }
+    
+    /// Exercise #14 - Not overdue before the due date
+    func test_isOverdue_whenNowIsBeforeDueDate_returnsFalse() {
+        // Arrange
+        let due = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = TaskListViewModel(clock: FakeClock(fixedNow: due.addingTimeInterval(-60)))
+        
+        // Act
+        viewModel.addTask(title: "Pay rent", dueDate: due)
+        
+        // Assert
+        XCTAssertFalse(viewModel.isOverdue(viewModel.tasks[0]))
+    }
+    
+    /// Exercise #15 - Capturing the argument
+    func test_addTask_withDueDate_passesTaskToScheduler() {
+        // Arrange
+        let mockScheduler = MockNotificationScheduler()
+        let viewModel = TaskListViewModel(notificationScheduler: mockScheduler)
+        let due = Date().addingTimeInterval(3600)
+        
+        // Act
+        viewModel.addTask(title: "Submit Report", dueDate: due)
+        
+        // Assert
+        XCTAssertEqual(mockScheduler.lastScheduleTasks?.title, "Submit Report")
+        XCTAssertEqual(mockScheduler.lastScheduleTasks?.dueDate, due)
+    }
+    
+    /// Exercise #16 - Completed tasks are never overdue
+    func test_isOverdue_forCompletedTask_returnsFalse() {
+        // Arrange
+        let due = Date(timeIntervalSince1970: 1_000_000)
+        let viewModel = TaskListViewModel(clock: FakeClock(fixedNow: due.addingTimeInterval(60)))
+        viewModel.addTask(title: "Pay rent", dueDate: due)
+        
+        // Act
+        viewModel.toggleCompletion(id: viewModel.tasks[0].id)
+        
+        // Assert
+        XCTAssertFalse(viewModel.isOverdue(viewModel.tasks[0]))
+    }
+    
+    /// Exercise #17 - In-memory fake store
+    func test_removeTask_deletesTaskFromStore() {
+        // Arrange
+        let store = FakeTaskStore(tasks: [TaskItem(title: "Task A"), TaskItem(title: "Task B")])
+        let viewModel = TaskListViewModel(service: store)
+        viewModel.loadTasks()
+        
+        // Act
+        viewModel.removeTask(at: 0)
+        
+        // Assert
+        XCTAssertEqual(store.fetchTasks().map(\.title), ["Task B"])
+    }
 }

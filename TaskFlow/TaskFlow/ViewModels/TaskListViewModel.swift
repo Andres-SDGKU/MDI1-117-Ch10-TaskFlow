@@ -10,19 +10,47 @@ import Combine
 
 class TaskListViewModel: ObservableObject {
     @Published var tasks: [TaskItem] = []
+    private let service: TaskServiceProtocol
+    private let notificationsScheduler: NotificationsSchedulingProtocol
+    private let clock: ClockProtocol
+    
+    init(
+        service: TaskServiceProtocol = TaskService(),
+        notificationScheduler: NotificationsSchedulingProtocol = NotificationsScheduler(),
+        clock: ClockProtocol = SystemClock()
+    ) {
+        self.service = service
+        self.notificationsScheduler = notificationScheduler
+        self.clock = clock
+    }
+    
+    // MARK: Class #3 Functions
+    func loadTasks() {
+        tasks = service.fetchTasks()
+    }
+    
+    func isOverdue(_ task: TaskItem) -> Bool {
+        task.isOverdue(now: clock.now())
+    }
     
     // MARK: Class #1 Functions
     /// Add task function
-    func addTask(title: String, priority: Priority = .medium) {
+    func addTask(title: String, priority: Priority = .medium, dueDate: Date? = nil) {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        tasks.append(TaskItem(title: trimmed, priority: priority))
+        let task = TaskItem(title: trimmed, priority: priority, dueDate: dueDate)
+        tasks.append(task)
+        if dueDate != nil {
+            notificationsScheduler.scheduleReminder(for: task)
+        }
     }
     
-    /// Delete task function
+    /// Delete task function - Modified on Class #3
     func removeTask(at index: Int) {
         guard tasks.indices.contains(index) else { return }
+        let removedId = tasks[index].id
         tasks.remove(at: index)
+        service.delete(id: removedId)
     }
     
     /// Toggle completion function
